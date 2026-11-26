@@ -117,10 +117,10 @@
     if (el.dataset.k) {
       var t = cur[el.dataset.k];
       t[el.dataset.f] = el.type === "checkbox" ? el.checked : (el.value.trim() === "" ? null : num(el.value));
-      if (el.dataset.f === "morto" && el.checked && !state.rules.doisMortos) {
+      if (el.checked && (el.dataset.f === "bateu" || (el.dataset.f === "morto" && !state.rules.doisMortos))) {
         var other = el.dataset.k === "us" ? "them" : "us";
-        cur[other].morto = false;
-        document.querySelector('input[data-k="' + other + '"][data-f="morto"]').checked = false;
+        cur[other][el.dataset.f] = false;
+        document.querySelector('input[data-k="' + other + '"][data-f="' + el.dataset.f + '"]').checked = false;
       }
       el.removeAttribute("aria-invalid"); document.getElementById("err").hidden = true;
       refreshRound();
