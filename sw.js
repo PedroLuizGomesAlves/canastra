@@ -1,6 +1,6 @@
 // Service worker: guarda os arquivos no celular para o app abrir sem internet.
 // Ao mudar qualquer arquivo do app, aumente o número da versão abaixo.
-var VERSAO = "canastra-v2";
+var VERSAO = "canastra-v3";
 var ARQUIVOS = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/style.css", "./js/app.js",

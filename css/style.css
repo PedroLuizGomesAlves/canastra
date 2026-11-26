@@ -90,3 +90,17 @@ input[aria-invalid="true"] { border-color: var(--bad); box-shadow: 0 0 0 2px var
   .tot small { font-size: .68rem; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+[hidden] { display: none !important; }
+.dealer { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 14px; flex-wrap: wrap; background: rgba(243, 236, 214, .12); color: var(--on-felt); border: 1px solid rgba(243, 236, 214, .3); border-radius: 12px; padding: 8px 14px; }
+.dealer b { font: 400 1.3rem var(--display); color: var(--gold); margin-left: 6px; }
+.dealer span { color: var(--on-felt-muted); font-size: .9rem; }
+.players { color: var(--muted); font-size: .9rem; margin-top: -8px; }
+.opt { font: 600 .68rem var(--text); color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; margin-left: 10px; text-transform: uppercase; letter-spacing: .08em; }
+#mesa { display: grid; gap: 14px; margin-top: 6px; }
+.mesa-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.mesa-team { display: grid; gap: 10px; border: 1px solid var(--line); border-radius: 12px; padding: 12px; align-content: start; }
+.mesa-team h3 { font: 400 1.1rem var(--display); margin: 0; }
+.seg { display: flex; gap: 8px; flex-wrap: wrap; }
+.seg .chk { flex: 1; min-width: 160px; }
+input[type=text], select { font: 500 1rem var(--text); width: 100%; min-height: 46px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--field); color: var(--ink); }

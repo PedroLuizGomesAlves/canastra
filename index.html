@@ -27,10 +27,11 @@
   </header>
 
   <div class="score" aria-live="polite">
-    <div class="tot us"><small>Nós</small><output id="totUs">0</output></div>
-    <div class="tot them"><small>Eles</small><output id="totThem">0</output></div>
+    <div class="tot us"><small id="lblUs">Nós</small><output id="totUs">0</output></div>
+    <div class="tot them"><small id="lblThem">Eles</small><output id="totThem">0</output></div>
   </div>
   <div class="banner" id="banner" hidden></div>
+  <div class="dealer" id="dealer" hidden></div>
 
   <div class="round" id="round"></div>
 
@@ -43,6 +44,12 @@
     <h2>Rodadas</h2>
     <div id="hist"></div>
   </section>
+
+  <details class="panel">
+    <summary>Nomes e quem dá as cartas <span class="opt">opcional</span></summary>
+    <div id="mesa"></div>
+    <p class="note">Tudo aqui é opcional. Na mesa, os dois jogadores de cada dupla sentam um de frente para o outro, e as duplas se alternam em volta. A ordem de quem dá é Nós 1, Eles 1, Nós 2, Eles 2 no sentido horário. Cada vez que você fecha uma rodada, a vez de dar passa para o próximo no sentido escolhido.</p>
+  </details>
 
   <details class="panel">
     <summary>Valores das regras</summary>

@@ -1,14 +1,29 @@
 (function () {
   var KEY = "canastra-v1";
   var defaults = { limpa: 200, suja: 100, bater: 100, morto: 100, meta: 3000, doisMortos: false };
-  var state = { rules: Object.assign({}, defaults), rounds: [], won: false };
+  var state = { rules: Object.assign({}, defaults), rounds: [], won: false, table: newTable() };
   var cur = {
     us:   { pts: 0, mao: 0, limpas: 0, sujas: 0, bateu: false, morto: false },
     them: { pts: 0, mao: 0, limpas: 0, sujas: 0, bateu: false, morto: false }
   };
-  var names = { us: "Nossa dupla", them: "Dupla adversária" };
+  var defLong = { us: "Nossa dupla", them: "Dupla adversária" }, defShort = { us: "Nós", them: "Eles" };
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function newTable() { return { names: { us: "", them: "" }, players: ["", "", "", ""], dir: "h", start: -1, dealer: -1 }; }
+  function teamLong(k) { return state.table.names[k].trim() || defLong[k]; }
+  function teamShort(k) { return state.table.names[k].trim() || defShort[k]; }
+  // Cadeiras em ordem horária: 0 = Nós 1, 1 = Eles 1, 2 = Nós 2, 3 = Eles 2 (parceiros ficam de frente um para o outro)
+  function seatTeam(i) { return i % 2 === 0 ? "us" : "them"; }
+  function seatName(i) { var n = state.table.players[i].trim(); return n || (teamShort(seatTeam(i)) + " " + (i < 2 ? 1 : 2)); }
+  function seatLabel(i) { var n = state.table.players[i].trim(); return n ? n + " (" + teamShort(seatTeam(i)) + ")" : seatName(i); }
+  function step() { return state.table.dir === "a" ? 3 : 1; }
 
-  function load() { try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && s.rules && s.rounds) state = s; } catch (e) {} }
+  function load() {
+    try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && s.rules && s.rounds) state = s; } catch (e) {}
+    var t = Object.assign(newTable(), state.table || {});
+    t.names = Object.assign({ us: "", them: "" }, t.names);
+    if (!Array.isArray(t.players) || t.players.length !== 4) t.players = ["", "", "", ""];
+    state.table = t;
+  }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
   function num(v) { var n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
 
@@ -26,7 +41,7 @@
   }
   function teamHTML(k) {
     var r = state.rules;
-    return '<div class="team ' + k + '"><h2><span class="dot"></span>' + names[k] + '</h2>' +
+    return '<div class="team ' + k + '"><h2><span class="dot"></span><span class="tname" data-tn="' + k + '">' + esc(teamLong(k)) + '</span></h2><div class="players" data-pl="' + k + '" hidden></div>' +
       '<label class="f" for="pts-' + k + '">Pontos para adicionar<input type="number" inputmode="numeric" id="pts-' + k + '" data-k="' + k + '" data-f="pts" placeholder="0"></label>' +
       stepper(k, "limpas", "Canastra limpa", "+" + r.limpa + " cada") +
       stepper(k, "sujas", "Canastra suja", "+" + r.suja + " cada") +
@@ -60,7 +75,7 @@
     document.getElementById("totThem").textContent = fmt(tt.them);
     var bn = document.getElementById("banner");
     if (meta > 0 && (tt.us >= meta || tt.them >= meta)) {
-      var w = tt.us === tt.them ? "Empate" : (tt.us > tt.them ? "Nossa dupla venceu" : "Dupla adversária venceu");
+      var w = tt.us === tt.them ? "Empate" : (tt.us > tt.them ? teamLong("us") + " venceu" : teamLong("them") + " venceu");
       bn.textContent = w + " (meta de " + fmt(meta) + " pontos atingida)";
       bn.hidden = false;
     } else { bn.hidden = true; }
@@ -79,7 +94,7 @@
     var rows = state.rounds.map(function (r, i) {
       return '<div class="rr"><div class="rn">Rodada ' + (i + 1) + '</div><div class="rc us"><b>' + fmt(r.us) + '</b>' + detail(r, "us") + '</div><div class="rc them"><b>' + fmt(r.them) + '</b>' + detail(r, "them") + '</div></div>';
     }).join("");
-    el.innerHTML = '<div class="hh"><span></span><span>Nós</span><span>Eles</span></div>' + rows +
+    el.innerHTML = '<div class="hh"><span></span><span>' + esc(teamShort("us")) + '</span><span>' + esc(teamShort("them")) + '</span></div>' + rows +
       '<div class="rr tt"><div class="rn">Total</div><div class="rc us"><b>' + fmt(tt.us) + '</b></div><div class="rc them"><b>' + fmt(tt.them) + '</b></div></div>';
   }
   function drawRules() {
@@ -87,6 +102,50 @@
     document.getElementById("rules").innerHTML = defs.map(function (d) {
       return '<label class="f" for="rule-' + d[0] + '">' + d[1] + '<input type="number" inputmode="numeric" id="rule-' + d[0] + '" data-rule="' + d[0] + '" value="' + state.rules[d[0]] + '"></label>';
     }).join("") + '<label class="chk wide" for="rule-dois"><input type="checkbox" id="rule-dois" data-toggle="doisMortos"' + (state.rules.doisMortos ? " checked" : "") + '> Jogo com dois mortos (as duas duplas podem pegar)</label>';
+  }
+  function drawMesa() {
+    var t = state.table;
+    function jog(a, n) {
+      return '<label class="f" for="pl-' + a + '">Jogador ' + n + '<input type="text" id="pl-' + a + '" data-table="player" data-i="' + a + '" placeholder="Nome" maxlength="20" autocomplete="off" value="' + esc(t.players[a]) + '"></label>';
+    }
+    function box(k, a, b) {
+      return '<div class="mesa-team"><h3>' + defLong[k] + '</h3>' +
+        '<label class="f" for="tn-' + k + '">Nome da dupla<input type="text" id="tn-' + k + '" data-table="name" data-tk="' + k + '" placeholder="' + defLong[k] + '" maxlength="20" autocomplete="off" value="' + esc(t.names[k]) + '"></label>' +
+        jog(a, 1) + jog(b, 2) + '</div>';
+    }
+    document.getElementById("mesa").innerHTML =
+      '<div class="mesa-grid">' + box("us", 0, 2) + box("them", 1, 3) + '</div>' +
+      '<div class="seg" role="radiogroup" aria-label="Sentido do jogo">' +
+      '<label class="chk"><input type="radio" name="dir" data-table="dir" value="h"' + (t.dir !== "a" ? " checked" : "") + '> Sentido horário</label>' +
+      '<label class="chk"><input type="radio" name="dir" data-table="dir" value="a"' + (t.dir === "a" ? " checked" : "") + '> Sentido anti-horário</label></div>' +
+      '<label class="f" for="dealerSel">Quem dá as cartas agora<select id="dealerSel" data-table="start"><option value="-1">Não usar</option>' +
+      [0, 1, 2, 3].map(function (i) { return '<option value="' + i + '">' + esc(seatLabel(i)) + '</option>'; }).join("") + '</select></label>';
+  }
+  function applyNames() {
+    var t = state.table;
+    document.getElementById("lblUs").textContent = teamShort("us");
+    document.getElementById("lblThem").textContent = teamShort("them");
+    document.querySelectorAll("[data-tn]").forEach(function (el) { el.textContent = teamLong(el.dataset.tn); });
+    document.querySelectorAll("[data-pl]").forEach(function (el) {
+      var a = el.dataset.pl === "us" ? 0 : 1, ns = [t.players[a].trim(), t.players[a + 2].trim()].filter(Boolean);
+      el.textContent = ns.join(" e "); el.hidden = !ns.length;
+    });
+    var sel = document.getElementById("dealerSel");
+    if (sel) { for (var i = 0; i < 4; i++) sel.options[i + 1].textContent = seatLabel(i); sel.value = String(t.dealer); }
+    var dl = document.getElementById("dealer");
+    if (t.dealer >= 0) {
+      dl.innerHTML = 'Quem dá as cartas: <b>' + esc(seatName(t.dealer)) + '</b><span>Próximo: ' + esc(seatName((t.dealer + step()) % 4)) + '</span>';
+      dl.hidden = false;
+    } else { dl.hidden = true; }
+    drawTotals(); drawHist();
+  }
+  function handleTable(el) {
+    var t = state.table, kind = el.dataset.table;
+    if (kind === "name") t.names[el.dataset.tk] = el.value;
+    else if (kind === "player") t.players[num(el.dataset.i)] = el.value;
+    else if (kind === "dir") t.dir = el.value;
+    else if (kind === "start") { var v = parseInt(el.value, 10); t.dealer = v; if (!state.rounds.length) t.start = v; }
+    save(); applyNames();
   }
   function resetCur() {
     ["us", "them"].forEach(function (k) { cur[k] = { pts: null, mao: 0, limpas: 0, sujas: 0, bateu: false, morto: false }; });
@@ -103,6 +162,7 @@
   });
   document.addEventListener("input", function (e) {
     var el = e.target;
+    if (el.dataset.table) { handleTable(el); return; }
     if (el.dataset.toggle) {
       state.rules.doisMortos = el.checked;
       if (!el.checked && cur.us.morto && cur.them.morto) { cur.them.morto = false; syncInputs(); }
@@ -138,7 +198,7 @@
     var errEl = document.getElementById("err"), missing = [];
     document.querySelectorAll('input[data-f="pts"]').forEach(function (i) { i.removeAttribute("aria-invalid"); });
     ["us", "them"].forEach(function (k) {
-      if (cur[k].pts === null) { missing.push(names[k]); document.getElementById("pts-" + k).setAttribute("aria-invalid", "true"); }
+      if (cur[k].pts === null) { missing.push(teamLong(k)); document.getElementById("pts-" + k).setAttribute("aria-invalid", "true"); }
     });
     if (missing.length) {
       errEl.textContent = "Preencha os pontos de: " + missing.join(" e ") + " (se não fez nada, coloque 0).";
@@ -149,19 +209,24 @@
     if (!state.rules.doisMortos && cur.us.morto && cur.them.morto) { errEl.textContent = "Só uma dupla pode pegar o morto. Ative \"dois mortos\" nas regras se o jogo tiver dois."; errEl.hidden = false; return; }
     if (cur.us.bateu && cur.them.bateu) { errEl.textContent = "Só uma dupla pode bater na rodada."; errEl.hidden = false; return; }
     errEl.hidden = true;
-    state.rounds.push({ us: calc(cur.us), them: calc(cur.them), d: { us: JSON.parse(JSON.stringify(cur.us)), them: JSON.parse(JSON.stringify(cur.them)) } }); save();
-    resetCur(); drawTotals(); drawHist();
+    var tb = state.table;
+    state.rounds.push({ us: calc(cur.us), them: calc(cur.them), dealer: tb.dealer, d: { us: JSON.parse(JSON.stringify(cur.us)), them: JSON.parse(JSON.stringify(cur.them)) } });
+    if (tb.dealer >= 0) tb.dealer = (tb.dealer + step()) % 4;
+    save();
+    resetCur(); drawTotals(); drawHist(); applyNames();
   });
   document.getElementById("undo").addEventListener("click", function () {
     if (!state.rounds.length) return;
-    state.rounds.pop(); save(); drawTotals(); drawHist();
+    var last = state.rounds.pop();
+    if (typeof last.dealer === "number" && last.dealer >= 0) state.table.dealer = last.dealer;
+    save(); drawTotals(); drawHist(); applyNames();
   });
   var resetBtn = document.getElementById("reset"), armed = false, timer;
   resetBtn.addEventListener("click", function () {
     if (!armed) { armed = true; resetBtn.textContent = "Toque de novo para apagar"; timer = setTimeout(disarm, 3000); return; }
-    clearTimeout(timer); disarm(); state.rounds = []; save(); resetCur(); drawTotals(); drawHist();
+    clearTimeout(timer); disarm(); state.rounds = []; state.table.dealer = state.table.start; save(); resetCur(); drawTotals(); drawHist(); applyNames();
   });
   function disarm() { armed = false; resetBtn.textContent = "Novo jogo"; }
 
-  load(); resetCur(); drawTotals(); drawHist(); drawRules();
+  load(); resetCur(); drawTotals(); drawHist(); drawRules(); drawMesa(); applyNames();
 })();
