@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Contador de Canastra</title>
+<meta name="theme-color" content="#0d4a38">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Canastra">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+<style>body{margin:0}</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <h1>Contador de Canastra</h1>
+    <div class="actions">
+      <button class="ghost" id="undo" type="button">Desfazer rodada</button>
+      <button class="ghost" id="reset" type="button">Novo jogo</button>
+    </div>
+  </header>
+
+  <div class="score" aria-live="polite">
+    <div class="tot us"><small>Nós</small><output id="totUs">0</output></div>
+    <div class="tot them"><small>Eles</small><output id="totThem">0</output></div>
+  </div>
+  <div class="banner" id="banner" hidden></div>
+
+  <div class="round" id="round"></div>
+
+  <p class="err" id="err" role="alert" hidden></p>
+  <div class="actions">
+    <button class="primary" id="close" type="button">Fechar rodada</button>
+  </div>
+
+  <section class="panel">
+    <h2>Rodadas</h2>
+    <div id="hist"></div>
+  </section>
+
+  <details class="panel">
+    <summary>Valores das regras</summary>
+    <div class="rules" id="rules"></div>
+    <p class="note">Ajuste ao jeito que sua mesa joga. Cada rodada soma: pontos das cartas baixadas, canastras, batida e morto, além do que você digitar no campo de pontos. Só uma dupla pode pegar o morto, a não ser que você ative "dois mortos".</p>
+  </details>
+</div>
+
+
+<script src="js/app.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+}
+</script>
+</body>
+</html>
